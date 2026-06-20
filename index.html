@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="description" content="Samsung Internet 모바일에서 YouTube 영상을 재생하고 백그라운드 전환을 시도하기 위한 심플 플레이어" />
+  <title>YouTube Background Player</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+      color: #e5e7eb;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(59, 130, 246, .35), transparent 32rem),
+        radial-gradient(circle at 85% 0%, rgba(236, 72, 153, .20), transparent 28rem),
+        linear-gradient(160deg, #020617 0%, #0f172a 52%, #111827 100%);
+      line-height: 1.5;
+      padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    }
+    a { color: #93c5fd; }
+    .shell { width: min(960px, 100%); margin: 0 auto; padding: 28px 16px 44px; }
+    .hero { margin: 22px 0 20px; }
+    .eyebrow { color: #93c5fd; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
+    h1 { margin: 8px 0 10px; font-size: clamp(30px, 9vw, 58px); line-height: 1.02; letter-spacing: -0.055em; }
+    .lead { margin: 0; max-width: 720px; color: #cbd5e1; font-size: 16px; }
+    .card {
+      background: rgba(15, 23, 42, .72);
+      border: 1px solid rgba(148, 163, 184, .24);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .36);
+      border-radius: 28px;
+      overflow: hidden;
+      backdrop-filter: blur(18px);
+    }
+    .player-wrap { padding: 12px; }
+    .player-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #000;
+      border: 1px solid rgba(255, 255, 255, .08);
+    }
+    #player, #player iframe { width: 100%; height: 100%; }
+    .controls { padding: 16px; display: grid; gap: 12px; }
+    .input-row { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    input {
+      appearance: none;
+      width: 100%;
+      border: 1px solid rgba(148, 163, 184, .26);
+      border-radius: 16px;
+      background: rgba(2, 6, 23, .64);
+      color: #f8fafc;
+      padding: 14px 14px;
+      font-size: 16px;
+      outline: none;
+    }
+    input:focus { border-color: #60a5fa; box-shadow: 0 0 0 4px rgba(96, 165, 250, .15); }
+    .buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    button {
+      border: 0;
+      border-radius: 16px;
+      padding: 13px 12px;
+      min-height: 48px;
+      font-weight: 800;
+      font-size: 15px;
+      color: #0b1120;
+      background: #e5e7eb;
+      cursor: pointer;
+      transition: transform .16s ease, filter .16s ease, background .16s ease;
+      touch-action: manipulation;
+    }
+    button:hover { transform: translateY(-1px); filter: brightness(1.04); }
+    button:active { transform: translateY(0); }
+    button.primary { color: #06101f; background: linear-gradient(135deg, #60a5fa, #a78bfa); }
+    button.ghost { color: #e5e7eb; background: rgba(148, 163, 184, .16); border: 1px solid rgba(148, 163, 184, .22); }
+    button.danger { color: #fecaca; background: rgba(239, 68, 68, .15); border: 1px solid rgba(248, 113, 113, .20); }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #cbd5e1;
+      font-size: 14px;
+      min-height: 24px;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 999px; background: #64748b; box-shadow: 0 0 20px rgba(100, 116, 139, .8); }
+    .dot.playing { background: #22c55e; box-shadow: 0 0 22px rgba(34, 197, 94, .85); }
+    .dot.paused { background: #f59e0b; box-shadow: 0 0 22px rgba(245, 158, 11, .85); }
+    .mini {
+      position: fixed;
+      right: 12px;
+      bottom: 12px;
+      width: 172px;
+      aspect-ratio: 16 / 9;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #000;
+      border: 1px solid rgba(255,255,255,.2);
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      z-index: 30;
+      display: none;
+    }
+    .mini.on { display: block; }
+    .mini .hint { position: absolute; inset: auto 0 0; padding: 8px; font-size: 11px; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.85)); pointer-events: none; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 16px; }
+    .note { padding: 16px; border-radius: 22px; background: rgba(15, 23, 42, .56); border: 1px solid rgba(148, 163, 184, .18); color: #cbd5e1; }
+    .note h2 { margin: 0 0 8px; font-size: 17px; color: #f8fafc; }
+    .note ol, .note ul { margin: 8px 0 0; padding-left: 21px; }
+    .note li { margin: 6px 0; }
+    .small { color: #94a3b8; font-size: 13px; }
+    @media (min-width: 720px) {
+      .input-row { grid-template-columns: 1fr auto; }
+      .buttons { grid-template-columns: repeat(4, auto); justify-content: start; }
+      .grid { grid-template-columns: 1.15fr .85fr; }
+      .controls { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="eyebrow">Samsung Internet friendly</div>
+      <h1>유튜브 백그라운드 재생용 미니 플레이어</h1>
+      <p class="lead">YouTube 공식 IFrame API만 사용합니다. 영상을 한 번 직접 재생한 뒤 홈 화면으로 나가거나 화면을 끄면, Samsung Internet의 미디어 처리 방식에 따라 오디오가 계속 재생될 수 있습니다.</p>
+    </section>
+
+    <section class="card" aria-label="YouTube player">
+      <div class="player-wrap">
+        <div class="player-frame"><div id="player"></div></div>
+      </div>
+      <div class="controls">
+        <div class="input-row">
+          <input id="videoInput" inputmode="url" autocomplete="url" placeholder="YouTube URL 또는 영상 ID를 붙여넣으세요" aria-label="YouTube URL or video ID" />
+          <button class="primary" id="loadBtn">불러오기</button>
+        </div>
+        <div class="buttons">
+          <button class="primary" id="playBtn">재생</button>
+          <button class="ghost" id="pauseBtn">일시정지</button>
+          <button class="ghost" id="miniBtn">미니모드</button>
+          <button class="danger" id="clearBtn">기록삭제</button>
+        </div>
+        <div class="status"><span id="dot" class="dot"></span><span id="statusText">플레이어 준비 중…</span></div>
+        <div class="small" id="currentText"></div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="note">
+        <h2>사용 방법</h2>
+        <ol>
+          <li>Samsung Internet 모바일앱에서 이 페이지를 엽니다.</li>
+          <li>YouTube 링크를 넣고 <b>불러오기</b>를 누릅니다.</li>
+          <li>영상이 보이면 <b>재생</b>을 한 번 직접 누릅니다.</li>
+          <li>홈 화면으로 나가거나 화면을 꺼서 백그라운드 재생 여부를 확인합니다.</li>
+        </ol>
+      </article>
+      <article class="note">
+        <h2>중요한 제한</h2>
+        <ul>
+          <li>이 페이지는 YouTube 영상을 다운로드하거나 우회 추출하지 않습니다.</li>
+          <li>백그라운드 지속 여부는 브라우저·OS·YouTube 정책에 따라 달라집니다.</li>
+          <li>모바일 브라우저 정책상 사용자가 직접 재생을 눌러야 합니다.</li>
+          <li>iframe을 숨기면 재생이 멈출 수 있어, 플레이어는 화면에 남겨둡니다.</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+
+  <div class="mini" id="miniBox" aria-hidden="true"><div class="hint">미니모드: 플레이어를 화면에 유지</div></div>
+
+  <script>
+    const DEFAULT_VIDEO = 'dQw4w9WgXcQ';
+    const els = {
+      input: document.getElementById('videoInput'),
+      load: document.getElementById('loadBtn'),
+      play: document.getElementById('playBtn'),
+      pause: document.getElementById('pauseBtn'),
+      mini: document.getElementById('miniBtn'),
+      clear: document.getElementById('clearBtn'),
+      dot: document.getElementById('dot'),
+      status: document.getElementById('statusText'),
+      current: document.getElementById('currentText'),
+      frame: document.querySelector('.player-frame'),
+      miniBox: document.getElementById('miniBox')
+    };
+
+    let player;
+    let currentVideo = localStorage.getItem('ytbg:lastVideo') || DEFAULT_VIDEO;
+    let wasPlayingBeforeHidden = false;
+    els.input.value = localStorage.getItem('ytbg:lastInput') || 'https://www.youtube.com/watch?v=' + currentVideo;
+
+    function extractVideoId(value) {
+      const raw = (value || '').trim();
+      if (!raw) return null;
+      if (/^[a-zA-Z0-9_-]{11}$/.test(raw)) return raw;
+      try {
+        const url = new URL(raw);
+        if (url.hostname.includes('youtu.be')) return url.pathname.split('/').filter(Boolean)[0] || null;
+        if (url.searchParams.get('v')) return url.searchParams.get('v');
+        const parts = url.pathname.split('/').filter(Boolean);
+        const markers = ['embed', 'shorts', 'live'];
+        for (const marker of markers) {
+          const idx = parts.indexOf(marker);
+          if (idx >= 0 && parts[idx + 1]) return parts[idx + 1];
+        }
+      } catch (e) {
+        const match = raw.match(/(?:v=|youtu\.be\/|embed\/|shorts\/|live\/)([a-zA-Z0-9_-]{11})/);
+        if (match) return match[1];
+      }
+      return null;
+    }
+
+    function setStatus(text, state) {
+      els.status.textContent = text;
+      els.dot.className = 'dot' + (state ? ' ' + state : '');
+    }
+
+    function saveCurrent(videoId, inputText) {
+      currentVideo = videoId;
+      localStorage.setItem('ytbg:lastVideo', videoId);
+      localStorage.setItem('ytbg:lastInput', inputText || videoId);
+      els.current.textContent = '현재 영상 ID: ' + videoId;
+      history.replaceState(null, '', '#v=' + videoId);
+    }
+
+    function loadVideoFromInput() {
+      const id = extractVideoId(els.input.value);
+      if (!id) {
+        setStatus('영상 ID를 찾지 못했습니다. YouTube 링크 또는 11자리 ID를 넣어주세요.', 'paused');
+        return;
+      }
+      saveCurrent(id, els.input.value.trim());
+      if (player && player.loadVideoById) {
+        player.loadVideoById(id);
+        setStatus('영상을 불러왔습니다. 재생 버튼을 눌러주세요.', 'paused');
+      }
+    }
+
+    window.onYouTubeIframeAPIReady = function () {
+      const hashId = new URLSearchParams(location.hash.replace(/^#/, '')).get('v');
+      if (hashId && /^[a-zA-Z0-9_-]{11}$/.test(hashId)) currentVideo = hashId;
+      player = new YT.Player('player', {
+        videoId: currentVideo,
+        playerVars: {
+          playsinline: 1,
+          rel: 0,
+          modestbranding: 1,
+          enablejsapi: 1,
+          origin: location.origin === 'null' ? undefined : location.origin
+        },
+        events: {
+          onReady: () => {
+            saveCurrent(currentVideo, els.input.value);
+            setStatus('준비 완료. 재생을 직접 눌러주세요.', 'paused');
+          },
+          onStateChange: (event) => {
+            if (event.data === YT.PlayerState.PLAYING) setStatus('재생 중입니다. 이제 백그라운드 전환을 테스트해보세요.', 'playing');
+            else if (event.data === YT.PlayerState.PAUSED) setStatus('일시정지됨', 'paused');
+            else if (event.data === YT.PlayerState.ENDED) setStatus('재생 종료', 'paused');
+            else if (event.data === YT.PlayerState.BUFFERING) setStatus('버퍼링 중…', 'paused');
+          }
+        }
+      });
+    };
+
+    els.load.addEventListener('click', loadVideoFromInput);
+    els.input.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadVideoFromInput(); });
+    els.play.addEventListener('click', () => { if (player && player.playVideo) player.playVideo(); });
+    els.pause.addEventListener('click', () => { if (player && player.pauseVideo) player.pauseVideo(); });
+    els.clear.addEventListener('click', () => {
+      localStorage.removeItem('ytbg:lastVideo');
+      localStorage.removeItem('ytbg:lastInput');
+      els.input.value = '';
+      setStatus('저장 기록을 삭제했습니다.', 'paused');
+    });
+    els.mini.addEventListener('click', () => {
+      const iframe = els.frame.querySelector('iframe');
+      if (!iframe) return;
+      if (els.miniBox.classList.contains('on')) {
+        els.frame.appendChild(iframe);
+        els.miniBox.classList.remove('on');
+        els.mini.textContent = '미니모드';
+      } else {
+        els.miniBox.insertBefore(iframe, els.miniBox.firstChild);
+        els.miniBox.classList.add('on');
+        els.mini.textContent = '원래대로';
+      }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!player || !player.getPlayerState) return;
+      if (document.hidden) {
+        wasPlayingBeforeHidden = player.getPlayerState() === YT.PlayerState.PLAYING;
+      } else if (wasPlayingBeforeHidden && player.playVideo) {
+        // 브라우저가 백그라운드에서 멈췄다면 복귀 시 자연스럽게 재개를 시도합니다.
+        setTimeout(() => player.playVideo(), 250);
+      }
+    });
+
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+  </script>
+</body>
+</html>
