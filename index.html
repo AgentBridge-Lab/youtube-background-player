@@ -11,27 +11,23 @@
     html, body { margin: 0; min-height: 100%; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
-      color: #e5e7eb;
-      background:
-        radial-gradient(circle at 20% 15%, rgba(59, 130, 246, .35), transparent 32rem),
-        radial-gradient(circle at 85% 0%, rgba(236, 72, 153, .20), transparent 28rem),
-        linear-gradient(160deg, #020617 0%, #0f172a 52%, #111827 100%);
+      color: #111827;
+      background: #ffffff;
       line-height: 1.5;
       padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
     }
-    a { color: #93c5fd; }
+    a { color: #2563eb; }
     .shell { width: min(960px, 100%); margin: 0 auto; padding: 28px 16px 44px; }
     .hero { margin: 22px 0 20px; }
-    .eyebrow { color: #93c5fd; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
+    .eyebrow { color: #2563eb; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
     h1 { margin: 8px 0 10px; font-size: clamp(30px, 9vw, 58px); line-height: 1.02; letter-spacing: -0.055em; }
-    .lead { margin: 0; max-width: 720px; color: #cbd5e1; font-size: 16px; }
+    .lead { margin: 0; max-width: 720px; color: #4b5563; font-size: 16px; }
     .card {
-      background: rgba(15, 23, 42, .72);
-      border: 1px solid rgba(148, 163, 184, .24);
-      box-shadow: 0 24px 80px rgba(0, 0, 0, .36);
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 18px 50px rgba(15, 23, 42, .10);
       border-radius: 28px;
       overflow: hidden;
-      backdrop-filter: blur(18px);
     }
     .player-wrap { padding: 12px; }
     .player-frame {
@@ -49,15 +45,15 @@
     input {
       appearance: none;
       width: 100%;
-      border: 1px solid rgba(148, 163, 184, .26);
+      border: 1px solid #d1d5db;
       border-radius: 16px;
-      background: rgba(2, 6, 23, .64);
-      color: #f8fafc;
+      background: #ffffff;
+      color: #111827;
       padding: 14px 14px;
       font-size: 16px;
       outline: none;
     }
-    input:focus { border-color: #60a5fa; box-shadow: 0 0 0 4px rgba(96, 165, 250, .15); }
+    input:focus { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, .12); }
     .buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     button {
       border: 0;
@@ -66,22 +62,22 @@
       min-height: 48px;
       font-weight: 800;
       font-size: 15px;
-      color: #0b1120;
-      background: #e5e7eb;
+      color: #111827;
+      background: #f3f4f6;
       cursor: pointer;
       transition: transform .16s ease, filter .16s ease, background .16s ease;
       touch-action: manipulation;
     }
     button:hover { transform: translateY(-1px); filter: brightness(1.04); }
     button:active { transform: translateY(0); }
-    button.primary { color: #06101f; background: linear-gradient(135deg, #60a5fa, #a78bfa); }
-    button.ghost { color: #e5e7eb; background: rgba(148, 163, 184, .16); border: 1px solid rgba(148, 163, 184, .22); }
-    button.danger { color: #fecaca; background: rgba(239, 68, 68, .15); border: 1px solid rgba(248, 113, 113, .20); }
+    button.primary { color: #ffffff; background: #2563eb; }
+    button.ghost { color: #111827; background: #f9fafb; border: 1px solid #d1d5db; }
+    button.danger { color: #b91c1c; background: #fff1f2; border: 1px solid #fecdd3; }
     .status {
       display: flex;
       align-items: center;
       gap: 10px;
-      color: #cbd5e1;
+      color: #4b5563;
       font-size: 14px;
       min-height: 24px;
     }
@@ -105,8 +101,8 @@
     .mini.on { display: block; }
     .mini .hint { position: absolute; inset: auto 0 0; padding: 8px; font-size: 11px; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.85)); pointer-events: none; }
     .grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 16px; }
-    .note { padding: 16px; border-radius: 22px; background: rgba(15, 23, 42, .56); border: 1px solid rgba(148, 163, 184, .18); color: #cbd5e1; }
-    .note h2 { margin: 0 0 8px; font-size: 17px; color: #f8fafc; }
+    .note { padding: 16px; border-radius: 22px; background: #ffffff; border: 1px solid #e5e7eb; color: #4b5563; box-shadow: 0 12px 30px rgba(15, 23, 42, .06); }
+    .note h2 { margin: 0 0 8px; font-size: 17px; color: #111827; }
     .note ol, .note ul { margin: 8px 0 0; padding-left: 21px; }
     .note li { margin: 6px 0; }
     .small { color: #94a3b8; font-size: 13px; }
