@@ -106,6 +106,20 @@
     .note ol, .note ul { margin: 8px 0 0; padding-left: 21px; }
     .note li { margin: 6px 0; }
     .small { color: #94a3b8; font-size: 13px; }
+    .download-panel {
+      padding: 14px;
+      border-radius: 20px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      display: grid;
+      gap: 10px;
+    }
+    .download-panel h2 { margin: 0; font-size: 16px; color: #111827; }
+    .download-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .download-status { color: #4b5563; font-size: 13px; min-height: 20px; }
+    button.download { color: #ffffff; background: #16a34a; }
+    button.download.secondary { background: #0f766e; }
+    button:disabled { opacity: .55; cursor: not-allowed; transform: none; filter: none; }
     @media (min-width: 720px) {
       .input-row { grid-template-columns: 1fr auto; }
       .buttons { grid-template-columns: repeat(4, auto); justify-content: start; }
@@ -139,6 +153,14 @@
         </div>
         <div class="status"><span id="dot" class="dot"></span><span id="statusText">플레이어 준비 중…</span></div>
         <div class="small" id="currentText"></div>
+        <div class="download-panel" aria-label="Download tools">
+          <h2>MP3 / MP4 다운로드</h2>
+          <div class="download-actions">
+            <button class="download" id="downloadMp3Btn">MP3 받기</button>
+            <button class="download secondary" id="downloadMp4Btn">MP4 받기</button>
+          </div>
+          <div class="download-status" id="downloadStatus">허용된 콘텐츠만 다운로드하세요. 서버 API 연결을 확인 중입니다…</div>
+        </div>
       </div>
     </section>
 
@@ -178,6 +200,9 @@
       dot: document.getElementById('dot'),
       status: document.getElementById('statusText'),
       current: document.getElementById('currentText'),
+      downloadMp3: document.getElementById('downloadMp3Btn'),
+      downloadMp4: document.getElementById('downloadMp4Btn'),
+      downloadStatus: document.getElementById('downloadStatus'),
       frame: document.querySelector('.player-frame'),
       miniBox: document.getElementById('miniBox')
     };
@@ -185,6 +210,7 @@
     let player;
     let currentVideo = localStorage.getItem('ytbg:lastVideo') || DEFAULT_VIDEO;
     let wasPlayingBeforeHidden = false;
+    const apiBase = (localStorage.getItem('ytbg:apiBase') || '').replace(/\/$/, '');
     els.input.value = localStorage.getItem('ytbg:lastInput') || 'https://www.youtube.com/watch?v=' + currentVideo;
 
     function extractVideoId(value) {
@@ -219,6 +245,69 @@
       localStorage.setItem('ytbg:lastInput', inputText || videoId);
       els.current.textContent = '현재 영상 ID: ' + videoId;
       history.replaceState(null, '', '#v=' + videoId);
+    }
+
+    function apiUrl(path) {
+      return apiBase + path;
+    }
+
+    function setDownloadBusy(isBusy) {
+      els.downloadMp3.disabled = isBusy;
+      els.downloadMp4.disabled = isBusy;
+    }
+
+    async function checkDownloadApi() {
+      try {
+        const res = await fetch(apiUrl('/api/health'), { cache: 'no-store' });
+        if (!res.ok) throw new Error('API 응답 오류');
+        els.downloadStatus.textContent = '다운로드 서버가 연결되었습니다. MP3 또는 MP4로 받을 수 있습니다.';
+        setDownloadBusy(false);
+      } catch (error) {
+        els.downloadStatus.textContent = '다운로드 API 서버가 연결되지 않았습니다. GitHub Pages 단독 배포에서는 다운로드 기능이 동작하지 않고, FastAPI 서버를 함께 실행해야 합니다.';
+        setDownloadBusy(true);
+      }
+    }
+
+    async function startDownload(format) {
+      const id = extractVideoId(els.input.value) || currentVideo;
+      if (!id) {
+        els.downloadStatus.textContent = '먼저 YouTube 링크 또는 영상 ID를 입력해주세요.';
+        return;
+      }
+      setDownloadBusy(true);
+      els.downloadStatus.textContent = format.toUpperCase() + ' 파일을 준비 중입니다. 긴 영상은 시간이 걸릴 수 있습니다…';
+      try {
+        const res = await fetch(apiUrl('/api/download'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: 'https://www.youtube.com/watch?v=' + id, format })
+        });
+        if (!res.ok) {
+          let message = '다운로드에 실패했습니다.';
+          try {
+            const data = await res.json();
+            message = data.detail || message;
+          } catch (e) {}
+          throw new Error(message);
+        }
+        const blob = await res.blob();
+        const disposition = res.headers.get('content-disposition') || '';
+        const filenameMatch = disposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+        const filename = filenameMatch ? decodeURIComponent(filenameMatch[1] || filenameMatch[2]) : 'youtube-download.' + format;
+        const objectUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(objectUrl);
+        els.downloadStatus.textContent = filename + ' 다운로드를 시작했습니다.';
+      } catch (error) {
+        els.downloadStatus.textContent = error.message || '다운로드 처리 중 오류가 발생했습니다.';
+      } finally {
+        setDownloadBusy(false);
+      }
     }
 
     function loadVideoFromInput() {
@@ -263,6 +352,8 @@
 
     els.load.addEventListener('click', loadVideoFromInput);
     els.input.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadVideoFromInput(); });
+    els.downloadMp3.addEventListener('click', () => startDownload('mp3'));
+    els.downloadMp4.addEventListener('click', () => startDownload('mp4'));
     els.play.addEventListener('click', () => { if (player && player.playVideo) player.playVideo(); });
     els.pause.addEventListener('click', () => { if (player && player.pauseVideo) player.pauseVideo(); });
     els.clear.addEventListener('click', () => {
@@ -298,6 +389,8 @@
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
     document.head.appendChild(tag);
+    setDownloadBusy(true);
+    checkDownloadApi();
   </script>
 </body>
 </html>
