@@ -190,7 +190,6 @@
   <div class="mini" id="miniBox" aria-hidden="true"><div class="hint">미니모드: 플레이어를 화면에 유지</div></div>
 
   <script>
-    const DEFAULT_VIDEO = 'dQw4w9WgXcQ';
     const els = {
       input: document.getElementById('videoInput'),
       load: document.getElementById('loadBtn'),
@@ -209,10 +208,10 @@
     };
 
     let player;
-    let currentVideo = localStorage.getItem('ytbg:lastVideo') || DEFAULT_VIDEO;
+    let currentVideo = '';
     let wasPlayingBeforeHidden = false;
     const apiBase = (localStorage.getItem('ytbg:apiBase') || '').replace(/\/$/, '');
-    els.input.value = localStorage.getItem('ytbg:lastInput') || 'https://www.youtube.com/watch?v=' + currentVideo;
+    els.input.value = '';
 
     function extractVideoId(value) {
       const raw = (value || '').trim();
@@ -326,9 +325,12 @@
 
     window.onYouTubeIframeAPIReady = function () {
       const hashId = new URLSearchParams(location.hash.replace(/^#/, '')).get('v');
-      if (hashId && /^[a-zA-Z0-9_-]{11}$/.test(hashId)) currentVideo = hashId;
-      player = new YT.Player('player', {
-        videoId: currentVideo,
+      if (hashId && /^[a-zA-Z0-9_-]{11}$/.test(hashId)) {
+        currentVideo = hashId;
+        els.input.value = 'https://www.youtube.com/watch?v=' + hashId;
+      }
+
+      const playerOptions = {
         playerVars: {
           playsinline: 1,
           rel: 0,
@@ -338,8 +340,13 @@
         },
         events: {
           onReady: () => {
-            saveCurrent(currentVideo, els.input.value);
-            setStatus('준비 완료. 재생을 직접 눌러주세요.', 'paused');
+            if (currentVideo) {
+              saveCurrent(currentVideo, els.input.value);
+              setStatus('준비 완료. 재생을 직접 눌러주세요.', 'paused');
+            } else {
+              els.current.textContent = '';
+              setStatus('주소를 넣고 불러오기를 눌러주세요.', 'paused');
+            }
           },
           onStateChange: (event) => {
             if (event.data === YT.PlayerState.PLAYING) setStatus('재생 중입니다. 이제 백그라운드 전환을 테스트해보세요.', 'playing');
@@ -348,7 +355,9 @@
             else if (event.data === YT.PlayerState.BUFFERING) setStatus('버퍼링 중…', 'paused');
           }
         }
-      });
+      };
+      if (currentVideo) playerOptions.videoId = currentVideo;
+      player = new YT.Player('player', playerOptions);
     };
 
     els.load.addEventListener('click', loadVideoFromInput);
