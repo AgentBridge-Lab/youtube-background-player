@@ -6,11 +6,13 @@
   <meta name="theme-color" content="#0f172a" />
   <meta name="description" content="Samsung Internet 모바일에서 YouTube 영상을 재생하고 백그라운드 전환을 시도하기 위한 심플 플레이어" />
   <title>YouTube Background Player</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+      font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
       color: #111827;
       background: #ffffff;
       line-height: 1.5;
@@ -20,7 +22,7 @@
     .shell { width: min(960px, 100%); margin: 0 auto; padding: 28px 16px 44px; }
     .hero { margin: 22px 0 20px; }
     .eyebrow { color: #2563eb; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
-    h1 { margin: 8px 0 10px; font-size: clamp(30px, 9vw, 58px); line-height: 1.02; letter-spacing: -0.055em; }
+    h1 { margin: 8px 0 10px; font-size: clamp(30px, 9vw, 58px); line-height: 1.5; letter-spacing: -0.055em; }
     .lead { margin: 0; max-width: 720px; color: #4b5563; font-size: 16px; }
     .card {
       background: #ffffff;
@@ -133,7 +135,6 @@
     <section class="hero">
       <div class="eyebrow">Samsung Internet friendly</div>
       <h1>유튜브 백그라운드 재생용 미니 플레이어</h1>
-      <p class="lead">영상을 한 번 직접 재생한 뒤 홈 화면으로 나가거나 화면을 끄면, Samsung Internet의 미디어 처리 방식에 따라 오디오가 계속 재생될 수 있습니다.</p>
     </section>
 
     <section class="card" aria-label="YouTube player">
